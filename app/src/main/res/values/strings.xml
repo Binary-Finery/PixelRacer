@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">Auto Racer Retro</string>
+    <string name="app_name">Box Dodge</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_title">TitleActivity</string>
 </resources>

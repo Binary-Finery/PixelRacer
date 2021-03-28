@@ -14,9 +14,9 @@ fun playerPaint(): Paint {
     }
 }
 
-fun enemyPaint(col : Int): Paint {
+fun enemyPaint(): Paint {
     return Paint().apply {
-        color = col
+        color = Color.RED
         isAntiAlias = true
         strokeWidth = 3f
         strokeCap = Paint.Cap.ROUND
@@ -28,6 +28,17 @@ fun textPaint(ctx: Context): Paint {
     val tf = ResourcesCompat.getFont(ctx, R.font.press_start_2p)
     return Paint().apply {
         color = Color.BLUE
+        isAntiAlias = true
+        textSize = 25f
+        typeface = tf
+        style = Paint.Style.FILL_AND_STROKE
+    }
+}
+
+fun hiScorePaint(ctx: Context): Paint {
+    val tf = ResourcesCompat.getFont(ctx, R.font.press_start_2p)
+    return Paint().apply {
+        color = Color.BLACK
         isAntiAlias = true
         textSize = 25f
         typeface = tf

@@ -5,23 +5,25 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_title.*
+import kotlinx.android.synthetic.main.content_title.*
 
-class MainActivity : AppCompatActivity() {
+class TitleActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_title)
         setSupportActionBar(findViewById(R.id.toolbar))
 
         toolbar.visibility = View.GONE
-    }
 
-    override fun onBackPressed() {
-        val gv: GameView = findViewById(R.id.gameView)
-        gv.terminate()
-        startActivity(Intent(this,TitleActivity::class.java))
-        finish()
+        val hi = PrefUtils(this).getHiScore()
+        tvHiScore.text = "HI: $hi"
+
+        btnPlay.setOnClickListener {
+            startActivity(Intent(it.context, MainActivity::class.java))
+            finish()
+        }
     }
 }
