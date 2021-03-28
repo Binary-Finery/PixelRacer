@@ -8,13 +8,22 @@ import android.graphics.Rect
 import android.os.Handler
 import android.util.AttributeSet
 import android.view.MotionEvent
+import kotlin.math.ceil
 
-class AnimView(context: Context, attr: AttributeSet?) :
+class GameView(context: Context, attr: AttributeSet?) :
     androidx.appcompat.widget.AppCompatImageView(context, attr) {
 
     private val playerPaint = playerPaint()
     private val enemyPaint = enemyPaint(Color.RED)
+    private val textPaint = textPaint(context)
+
+    private val enemies = ArrayList<Enemy>()
+    private val velocities = ArrayList<Float>()
+
     private val h = Handler()
+
+    val updateFrequency = 10L
+    val verts = 5
 
     var screenWidth = 0
     var screenHeight = 0
@@ -22,24 +31,32 @@ class AnimView(context: Context, attr: AttributeSet?) :
     var touchXPos = 0f
     var score = 0
     var gravity = 0.3f
-    val updateFrequency = 10L
+    var minYVelocity = 0
+    var maxYVelocity = 0
+    var hasCalculatedYVelocity = false
     var isGameOver = false
     var tickArr = arrayOf(1, 100, 300, 487, 688, 1000, 1800, 50000)
 
     private val carRect = Rect(0, 0, 0, screenHeight)
 
-    private val enemies = ArrayList<Enemy>()
-    private val velocities = ArrayList<Float>()
-    private val textPaint = textPaint(context)
-
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val sqr = screenWidth / 5
+        if (!hasCalculatedYVelocity) {
+            minYVelocity = ceil((0.07 * screenHeight) / 100f).toInt()
+            maxYVelocity = ceil((0.68 * screenHeight) / 100f).toInt()
+            hasCalculatedYVelocity = true
+        }
+
+        val boxDims = screenWidth / verts
         if (updateCounter < tickArr[tickArr.size - 1]) {
             updateCounter++
-            tickArr.forEach { if (updateCounter == it) addEnemy(sqr) }
+            tickArr.forEach {
+                if (updateCounter == it) {
+                    addEnemy(boxDims)
+                }
+            }
         }
 
         for (i in enemies.indices) {
@@ -47,22 +64,22 @@ class AnimView(context: Context, attr: AttributeSet?) :
             enemies[i].yPos += velocities[i]
             if (enemies[i].yPos > screenHeight) {
                 score++
-                velocities[i] = (1..10).random().toFloat()
-                enemies[i].yPos = -sqr.toFloat()
-                enemies[i].xPos = (0..5).random().toFloat() * sqr
+                velocities[i] = (minYVelocity..maxYVelocity).random().toFloat()
+                enemies[i].yPos = -boxDims.toFloat()
+                enemies[i].xPos = (0 until verts).random().toFloat() * boxDims
             }
             canvas.drawRect(
                 enemies[i].xPos,
                 enemies[i].yPos,
-                enemies[i].xPos + sqr,
-                enemies[i].yPos + sqr,
+                (enemies[i].xPos + boxDims),
+                (enemies[i].yPos + boxDims),
                 enemyPaint
             )
         }
         carRect.set(
-            (touchXPos - (sqr / 4)).toInt(),
-            ((screenHeight / 4) * 3) - (sqr / 2),
-            (touchXPos + (sqr / 4)).toInt(),
+            (touchXPos - (boxDims / 4)).toInt(),
+            ((screenHeight / 4) * 3) - (boxDims / 2),
+            (touchXPos + (boxDims / 4)).toInt(),
             (screenHeight / 4) * 3
         )
 
@@ -71,8 +88,8 @@ class AnimView(context: Context, attr: AttributeSet?) :
                     Rect(
                         enemies[i].xPos.toInt(),
                         enemies[i].yPos.toInt(),
-                        (enemies[i].xPos + sqr).toInt(),
-                        (enemies[i].yPos + sqr).toInt()
+                        (enemies[i].xPos + boxDims).toInt(),
+                        (enemies[i].yPos + boxDims).toInt()
                     )
                 )
             ) {
@@ -81,7 +98,7 @@ class AnimView(context: Context, attr: AttributeSet?) :
             }
         }
 
-        canvas.drawText("$score", 100f, 100f, textPaint)
+        canvas.drawText("$score", (boxDims / 2).toFloat(), (boxDims / 2).toFloat(), textPaint)
         canvas.drawRect(carRect, playerPaint)
         if (!isGameOver) {
             h.postDelayed(runner, updateFrequency)
@@ -97,9 +114,9 @@ class AnimView(context: Context, attr: AttributeSet?) :
         super.onSizeChanged(w, h, oldw, oldh)
     }
 
-    private fun addEnemy(i : Int) {
-        val startX = (0..5).random() * i
-        enemies.add(Enemy(startX.toFloat(), -100f))
+    private fun addEnemy(i: Int) {
+        val startX = (0 until verts).random() * i
+        enemies.add(Enemy(startX.toFloat(), -(i * 2).toFloat()))
         velocities.add((1..3).random().toFloat())
     }
 

@@ -8,7 +8,7 @@
     android:background="#fff"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-   <com.spencer_studios.autoracerretro.AnimView
+   <com.spencer_studios.autoracerretro.GameView
        android:layout_width="match_parent"
        android:layout_height="match_parent" />
 
