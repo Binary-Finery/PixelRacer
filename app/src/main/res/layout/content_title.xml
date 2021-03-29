@@ -19,7 +19,7 @@
         android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
         android:fontFamily="@font/press_start_2p"
-        android:text="BOX\nDOGDE"
+        android:text="BLOCK\nDODGE"
         tools:ignore="HardcodedText" />
 
     <TextView

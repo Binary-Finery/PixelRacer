@@ -7,7 +7,7 @@ import androidx.core.content.res.ResourcesCompat
 
 fun playerPaint(): Paint {
     return Paint().apply {
-        color = Color.GREEN
+        color = Color.parseColor("#4caf50")
         isAntiAlias = true
         strokeWidth = 5f
         style = Paint.Style.FILL
@@ -16,18 +16,17 @@ fun playerPaint(): Paint {
 
 fun enemyPaint(): Paint {
     return Paint().apply {
-        color = Color.RED
+        color = Color.parseColor("#f44336")
         isAntiAlias = true
         strokeWidth = 3f
-        strokeCap = Paint.Cap.ROUND
-        style = Paint.Style.FILL_AND_STROKE
+        style = Paint.Style.FILL
     }
 }
 
 fun textPaint(ctx: Context): Paint {
     val tf = ResourcesCompat.getFont(ctx, R.font.press_start_2p)
     return Paint().apply {
-        color = Color.BLUE
+        color = Color.WHITE
         isAntiAlias = true
         textSize = 25f
         typeface = tf
@@ -38,7 +37,7 @@ fun textPaint(ctx: Context): Paint {
 fun hiScorePaint(ctx: Context): Paint {
     val tf = ResourcesCompat.getFont(ctx, R.font.press_start_2p)
     return Paint().apply {
-        color = Color.BLACK
+        color = Color.LTGRAY
         isAntiAlias = true
         textSize = 25f
         typeface = tf

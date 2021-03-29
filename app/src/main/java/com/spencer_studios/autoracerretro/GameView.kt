@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.Toast
 import kotlin.math.ceil
@@ -26,41 +27,40 @@ class GameView(context: Context, attr: AttributeSet?) :
 
     var hiScore = PrefUtils(context).getHiScore()
 
-    val updateFrequency = 10L
-    val verts = 5
+    val updateFrequency = 5L
+    val verts = 6
 
     var screenWidth = 0
     var screenHeight = 0
     var updateCounter = 0
     var touchXPos = 0f
     var score = 0
-    var gravity = 0.3f
+    var gravity = 0f
     var minYVelocity = 0
     var maxYVelocity = 0
     var hasCalculatedYVelocity = false
     var isGameOver = false
     var userTerminated = false
-    var tickArr = ticker
+    var tickArr = launchFrequency()
 
     private val carRect = Rect(0, 0, 0, screenHeight)
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        if(!userTerminated) {
+        if (!userTerminated) {
 
             val boxDims = screenWidth / verts
 
             if (!hasCalculatedYVelocity) {
                 minYVelocity = ceil((0.07 * screenHeight) / 100f).toInt()
                 maxYVelocity = ceil((0.68 * screenHeight) / 100f).toInt()
-                touchXPos = (screenWidth/2).toFloat()
-                textPaint.textSize = boxDims.toFloat()/2
-                hiScoreTextPaint.textSize = boxDims.toFloat()/5
+                gravity = (0.0272f * screenHeight) / 100f
+                touchXPos = (screenWidth / 2).toFloat()
+                textPaint.textSize = boxDims.toFloat() / 2
+                hiScoreTextPaint.textSize = boxDims.toFloat() / 5
                 hasCalculatedYVelocity = true
             }
-
 
             if (updateCounter < tickArr[tickArr.size - 1]) {
                 updateCounter++
@@ -76,9 +76,7 @@ class GameView(context: Context, attr: AttributeSet?) :
                 enemies[i].yPos += velocities[i]
                 if (enemies[i].yPos > screenHeight) {
                     score++
-                    if(score > hiScore){
-                        hiScore = score
-                    }
+                    if (score > hiScore) hiScore = score
                     velocities[i] = (minYVelocity..maxYVelocity).random().toFloat()
                     enemies[i].yPos = -boxDims.toFloat()
                     enemies[i].xPos = (0 until verts).random().toFloat() * boxDims
@@ -113,32 +111,41 @@ class GameView(context: Context, attr: AttributeSet?) :
                 }
             }
 
-            canvas.drawText("HI $hiScore", (boxDims / 2).toFloat(),(boxDims).toFloat()/2,hiScoreTextPaint)
-            canvas.drawText("$score", (boxDims / 2).toFloat(), (boxDims).toFloat()+10, textPaint)
+            canvas.drawText(
+                "HI $hiScore",
+                (boxDims / 2).toFloat(),
+                (boxDims).toFloat() / 2,
+                hiScoreTextPaint
+            )
+            canvas.drawText("$score", (boxDims / 2).toFloat(), (boxDims).toFloat() + 10, textPaint)
 
             canvas.drawRect(carRect, playerPaint)
 
             if (!isGameOver) {
                 h.postDelayed(runner, updateFrequency)
             } else {
-                canvas.drawColor(Color.WHITE)
-                textPaint.textSize = (boxDims/4).toFloat()
-                canvas.drawText("score = $score", 10f, (screenHeight / 2).toFloat(), textPaint)
-                canvas.drawText("tap to play again",10f,(screenHeight / 2).toFloat() + (boxDims/2), textPaint)
+                //textPaint.textSize = (boxDims / 4).toFloat()
+                canvas.drawText("you scored $score", 10f, (screenHeight / 2).toFloat(), hiScoreTextPaint)
+                canvas.drawText(
+                    "tap to play again",
+                    10f,
+                    (screenHeight / 2).toFloat() + (boxDims / 2),
+                    hiScoreTextPaint
+                )
                 val prefs = PrefUtils(context)
                 val hi = prefs.getHiScore()
-                if(score>hi){
+                if (score > hi) {
                     prefs.setHiScore(score)
                 }
             }
-        }else{
+        } else {
             h.removeCallbacks(runner)
         }
     }
 
     fun terminate() {
+        h.removeCallbacks(runner)
         userTerminated = true
-        Toast.makeText(context, "stopped", Toast.LENGTH_SHORT).show()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
