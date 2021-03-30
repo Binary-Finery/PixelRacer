@@ -3,13 +3,10 @@ package com.spencer_studios.autoracerretro
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
-import android.widget.Toast
 import kotlin.math.ceil
 
 class GameView(context: Context, attr: AttributeSet?) :
@@ -17,19 +14,16 @@ class GameView(context: Context, attr: AttributeSet?) :
 
     private val playerPaint = playerPaint()
     private val enemyPaint = enemyPaint()
-    private val textPaint = textPaint(context)
+    private val scoreTextPaint = textPaint(context)
     private val hiScoreTextPaint = hiScorePaint(context)
 
-    private val enemies = ArrayList<Enemy>()
+    private val blocks = ArrayList<Block>()
     private val velocities = ArrayList<Float>()
-
     private val h = Handler()
 
     var hiScore = PrefUtils(context).getHiScore()
-
     val updateFrequency = 5L
     val verts = 6
-
     var screenWidth = 0
     var screenHeight = 0
     var updateCounter = 0
@@ -38,71 +32,69 @@ class GameView(context: Context, attr: AttributeSet?) :
     var gravity = 0f
     var minYVelocity = 0
     var maxYVelocity = 0
-    var hasCalculatedYVelocity = false
+    var blockDims = 0
+    var hasCalculatedValues = false
     var isGameOver = false
     var userTerminated = false
-    var tickArr = launchFrequency()
+    lateinit var tickArr: Array<Int>
 
-    private val carRect = Rect(0, 0, 0, screenHeight)
+    private val playerRect = Rect(0, 0, 0, screenHeight)
 
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (!userTerminated) {
-
-            val boxDims = screenWidth / verts
-
-            if (!hasCalculatedYVelocity) {
+            if (!hasCalculatedValues) {
+                tickArr = launchFrequency()
                 minYVelocity = ceil((0.07 * screenHeight) / 100f).toInt()
                 maxYVelocity = ceil((0.68 * screenHeight) / 100f).toInt()
                 gravity = (0.0272f * screenHeight) / 100f
+                blockDims = screenWidth / verts
                 touchXPos = (screenWidth / 2).toFloat()
-                textPaint.textSize = boxDims.toFloat() / 2
-                hiScoreTextPaint.textSize = boxDims.toFloat() / 5
-                hasCalculatedYVelocity = true
+                scoreTextPaint.textSize = blockDims.toFloat() / 2
+                hiScoreTextPaint.textSize = blockDims.toFloat() / 5
+                hasCalculatedValues = true
             }
 
             if (updateCounter < tickArr[tickArr.size - 1]) {
                 updateCounter++
                 tickArr.forEach {
-                    if (updateCounter == it) {
-                        addEnemy(boxDims)
-                    }
+                    if (updateCounter == it) addBlock()
                 }
             }
 
-            for (i in enemies.indices) {
+            for (i in blocks.indices) {
                 velocities[i] += gravity
-                enemies[i].yPos += velocities[i]
-                if (enemies[i].yPos > screenHeight) {
+                blocks[i].yPos += velocities[i]
+                if (blocks[i].yPos > screenHeight) {
                     score++
                     if (score > hiScore) hiScore = score
-                    velocities[i] = (minYVelocity..maxYVelocity).random().toFloat()
-                    enemies[i].yPos = -boxDims.toFloat()
-                    enemies[i].xPos = (0 until verts).random().toFloat() * boxDims
+                    velocities[i] = rndV()
+                    blocks[i].yPos = -blockDims.toFloat()
+                    blocks[i].xPos = rndX()
                 }
                 canvas.drawRect(
-                    enemies[i].xPos,
-                    enemies[i].yPos,
-                    (enemies[i].xPos + boxDims),
-                    (enemies[i].yPos + boxDims),
+                    blocks[i].xPos,
+                    blocks[i].yPos,
+                    blocks[i].xPos + blockDims,
+                    blocks[i].yPos + blockDims,
                     enemyPaint
                 )
             }
-            carRect.set(
-                (touchXPos - (boxDims / 4)).toInt(),
-                ((screenHeight / 4) * 3) - (boxDims / 2),
-                (touchXPos + (boxDims / 4)).toInt(),
+            playerRect.set(
+                (touchXPos - (blockDims / 4)).toInt(),
+                ((screenHeight / 4) * 3) - (blockDims / 2),
+                (touchXPos + (blockDims / 4)).toInt(),
                 (screenHeight / 4) * 3
             )
 
-            for (i in enemies.indices) {
-                if (carRect.intersect(
+            for (i in blocks.indices) {
+                if (playerRect.intersect(
                         Rect(
-                            enemies[i].xPos.toInt(),
-                            enemies[i].yPos.toInt(),
-                            (enemies[i].xPos + boxDims).toInt(),
-                            (enemies[i].yPos + boxDims).toInt()
+                            blocks[i].xPos.toInt(),
+                            blocks[i].yPos.toInt(),
+                            (blocks[i].xPos + blockDims).toInt(),
+                            (blocks[i].yPos + blockDims).toInt()
                         )
                     )
                 ) {
@@ -113,30 +105,29 @@ class GameView(context: Context, attr: AttributeSet?) :
 
             canvas.drawText(
                 "HI $hiScore",
-                (boxDims / 2).toFloat(),
-                (boxDims).toFloat() / 2,
+                (blockDims / 2).toFloat(),
+                (blockDims).toFloat() / 2,
                 hiScoreTextPaint
             )
-            canvas.drawText("$score", (boxDims / 2).toFloat(), (boxDims).toFloat() + 10, textPaint)
+            canvas.drawText(
+                "$score",
+                (blockDims / 2).toFloat(),
+                (blockDims).toFloat() + 10,
+                scoreTextPaint
+            )
+            canvas.drawRect(playerRect, playerPaint)
 
-            canvas.drawRect(carRect, playerPaint)
-
-            if (!isGameOver) {
-                h.postDelayed(runner, updateFrequency)
-            } else {
-                //textPaint.textSize = (boxDims / 4).toFloat()
-                canvas.drawText("you scored $score", 10f, (screenHeight / 2).toFloat(), hiScoreTextPaint)
+            if (!isGameOver) h.postDelayed(runner, updateFrequency)
+            else {
                 canvas.drawText(
-                    "tap to play again",
-                    10f,
-                    (screenHeight / 2).toFloat() + (boxDims / 2),
+                    resources.getString(R.string.replay_game_message),
+                    (blockDims/5).toFloat(),
+                    (screenHeight / 2).toFloat(),
                     hiScoreTextPaint
                 )
                 val prefs = PrefUtils(context)
                 val hi = prefs.getHiScore()
-                if (score > hi) {
-                    prefs.setHiScore(score)
-                }
+                if (score > hi) prefs.setHiScore(score)
             }
         } else {
             h.removeCallbacks(runner)
@@ -154,23 +145,18 @@ class GameView(context: Context, attr: AttributeSet?) :
         super.onSizeChanged(w, h, oldw, oldh)
     }
 
-    private fun addEnemy(i: Int) {
-        enemies.add(Enemy(((0 until verts).random() * i).toFloat(), -(i * 2).toFloat()))
-        velocities.add((1..3).random().toFloat())
+    private fun addBlock() {
+        blocks.add(Block(rndX(), -(blockDims * 2).toFloat()))
+        velocities.add(rndV())
     }
+
+    private fun rndX(): Float = ((0 until verts).random() * blockDims).toFloat()
+    private fun rndV(): Float = (minYVelocity..maxYVelocity).random().toFloat()
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (event?.action == MotionEvent.ACTION_MOVE) {
-            if (!isGameOver) {
-                touchXPos = event.x
-            }
-        }
-        if (event?.action == MotionEvent.ACTION_DOWN) {
-            if (isGameOver) {
-                newGame()
-            }
-        }
+        if (event?.action == MotionEvent.ACTION_MOVE && !isGameOver) touchXPos = event.x
+        if (event?.action == MotionEvent.ACTION_DOWN && isGameOver) newGame()
         return true
     }
 
@@ -180,9 +166,9 @@ class GameView(context: Context, attr: AttributeSet?) :
         updateCounter = 0
         score = 0
         velocities.clear()
-        enemies.clear()
+        blocks.clear()
         isGameOver = false
-        hasCalculatedYVelocity = false
+        hasCalculatedValues = false
         h.postDelayed(runner, updateFrequency)
     }
 }

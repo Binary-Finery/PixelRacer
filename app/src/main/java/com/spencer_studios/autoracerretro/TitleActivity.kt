@@ -19,10 +19,10 @@ class TitleActivity : AppCompatActivity() {
         toolbar.visibility = View.GONE
 
         val hi = PrefUtils(this).getHiScore()
-        tvHiScore.text = "HI: $hi"
+        tvHiScore.text = "HI $hi"
 
         btnPlay.setOnClickListener {
-            startActivity(Intent(it.context, MainActivity::class.java))
+            startActivity(Intent(it.context, GameActivity::class.java))
             finish()
         }
     }
